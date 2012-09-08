@@ -5,6 +5,7 @@ using System.Text;
 using PcapDotNet.Core;
 using PcapDotNet.Packets.Ethernet;
 using PcapDotNet.Packets.Arp;
+using PcapDotNet.Packets.Transport;
 using PcapDotNet.Packets;
 using System.Threading;
 using System.Diagnostics;
@@ -23,9 +24,16 @@ namespace Discovery
         static PacketBuilder icmpBuilder;
         static IpV4Layer ipLayer;
         static IcmpEchoLayer icmpLayer;
+        
+
+        static PacketBuilder TCPBuilder;
+        static TcpLayer TCPLayer;
 
         static bool RandomMode = false;
         static int RandomLimit = 0;
+
+        static bool TCPMode = false;
+        static int TCPPort = 80;
 
         static IP startIP;
         static IP endIP;
@@ -44,8 +52,16 @@ namespace Discovery
                 var end = endIP++;
                 for (IP i = startIP; i < end; i++)
                 {
-                    Console.WriteLine("Sending ICMP to {0}", i);
-                    SendICMP(i.ToString());
+                    if (!TCPMode)
+                    {
+                        Console.WriteLine("Sending ICMP to {0}", i);
+                        SendICMP(i.ToString());
+                    }
+                    else
+                    {
+                        Console.WriteLine("Sending TCP SYN to {0}", i);
+                        SendSYN(i.ToString());
+                    }
                     Thread.Sleep(delay);
                 }
             }
@@ -54,8 +70,16 @@ namespace Discovery
                 for (int x = 0; x < RandomLimit; x++ )
                 {
                     string i = string.Format("{0}.{1}.{2}.{3}", rand.Next(1, 240), rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
-                    Console.WriteLine("Sending ICMP to {0}", i);
-                    SendICMP(i);
+                    if (!TCPMode)
+                    {
+                        Console.WriteLine("Sending ICMP to {0}", i);
+                        SendICMP(i);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Sending TCP SYN to {0}", i);
+                        SendSYN(i);
+                    }
                     Thread.Sleep(delay);
                 }
             }
@@ -85,7 +109,18 @@ namespace Discovery
             icmpLayer = new IcmpEchoLayer();
             icmpBuilder = new PacketBuilder(ethLayer, ipLayer, icmpLayer);
 
-            communicator.SetFilter("icmp[0] = 0");
+            TCPLayer = new TcpLayer();
+            TCPBuilder = new PacketBuilder(ethLayer, ipLayer, TCPLayer);
+
+            if (!TCPMode)
+            {
+                communicator.SetFilter("icmp[0] = 0");
+            }
+            else
+            {
+                //tcp[13] = 18
+                communicator.SetFilter("tcp[13] = 18");
+            }
         }
         
         static string LocalIPAddress()
@@ -144,6 +179,21 @@ namespace Discovery
             communicator.SendPacket(icmpBuilder.Build(DateTime.Now));
         }
 
+        private static void SendSYN(string ip)
+        {
+            ushort id = (ushort)rand.Next(65000);
+            
+
+            ipLayer.CurrentDestination = new IpV4Address(ip);
+            ipLayer.Identification = id;
+
+            TCPLayer.ControlBits = TcpControlBits.Synchronize;
+            TCPLayer.DestinationPort = (ushort)TCPPort;
+            TCPLayer.SourcePort = (ushort)rand.Next(60000, 65000);
+
+            communicator.SendPacket(TCPBuilder.Build(DateTime.Now));
+        }
+
         private static bool parseArgs(string[] args)
         {
             if (args.Length < 4)
@@ -152,11 +202,13 @@ namespace Discovery
                 Console.WriteLine("Example: discovery 1.1.1.1 1.1.2.1 100 out.txt");
                 Console.WriteLine("For Random Scanning:");
                 Console.WriteLine("Example: discovery R <Number Of IPs> 100 out.txt");
-
+                Console.WriteLine("For TCP Scanning:");
+                Console.WriteLine("Example: discovery 1.1.1.1 1.1.2.1 100 out.txt <port> -t");
                 return false;
             }
             try
             {
+              
                 if (args[0].ToLower().StartsWith("r"))
                 {
                     RandomMode = true;
@@ -169,6 +221,11 @@ namespace Discovery
                 }
                 delay = int.Parse(args[2]);
                 outPath = args[3];
+                if (args.Length == 6)
+                {
+                    TCPMode = true;
+                    TCPPort = int.Parse(args[4]);
+                }
             }
             catch (Exception ex)
             {
