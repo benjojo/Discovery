@@ -50,7 +50,7 @@ namespace Discovery
 
         private static void receiver(Packet packet)
         {
-            if (packet.IpV4.Icmp == null || packet.IpV4.Icmp.MessageType != IcmpMessageType.EchoReply) return;
+            //if (packet.IpV4.Icmp == null || packet.IpV4.Icmp.MessageType != IcmpMessageType.EchoReply) return;
             IP source = new IP(packet.Ethernet.IpV4.Source.ToString());
 
             Console.WriteLine("icmp reply from {0}", source.ToString());
@@ -70,7 +70,7 @@ namespace Discovery
             icmpLayer = new IcmpEchoLayer();
             icmpBuilder = new PacketBuilder(ethLayer, ipLayer, icmpLayer);
 
-            communicator.SetFilter("icmp");
+            communicator.SetFilter("icmp[0] = 0");
         }
         
         static string LocalIPAddress()
