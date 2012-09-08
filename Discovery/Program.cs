@@ -91,14 +91,14 @@ namespace Discovery
         {
             return BitConverter.ToString(
                 NetworkInterface.GetAllNetworkInterfaces()
-                .First(t => t.Name == "Ethernet")
+                .First(t => t.Name.Contains("Ethernet"))
                 .GetPhysicalAddress()
                 .GetAddressBytes())
                 .Replace("-", ":");
         }
         private static string getRouterMAC()
         {
-            var gateway = NetworkInterface.GetAllNetworkInterfaces().First(t => t.Name == "Ethernet").GetIPProperties().GatewayAddresses[0].Address;
+            var gateway = NetworkInterface.GetAllNetworkInterfaces().First(t => t.Name.Contains("Ethernet")).GetIPProperties().GatewayAddresses[0].Address;
             Process p = new Process();
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
