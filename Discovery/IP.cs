@@ -30,13 +30,29 @@ namespace Discovery
             Values[3] = int.Parse(ipstr_split[3]);
         }
 
-        public static void operator ++(IP ip)
+        public static IP operator ++(IP ip)
         {
             ip.Values[3]++;
-            ip.Values[2] += ip.Values[3] % 255;
-            ip.Values[1] += ip.Values[2] % 255;
-            ip.Values[0] += ip.Values[1] % 255;
+            if (ip.Values[3] > 255)
+            {
+                int overflow = ip.Values[3] % 255;
+                ip.Values[2]++;
+                ip.Values[3] = overflow;
+            }
+            if (ip.Values[2] > 255)
+            {
+                int overflow = ip.Values[2] % 255;
+                ip.Values[1]++;
+                ip.Values[2] = overflow;
+            }
+            if (ip.Values[1] > 255)
+            {
+                int overflow = ip.Values[1] % 255;
+                ip.Values[0]++;
+                ip.Values[1] = overflow;
+            }
             if (ip.Values[0] > 255) throw new Exception("wtf faget where you trying to go to now");
+            return ip;
         }
 
         public static bool operator <(IP ip, IP ip2)
