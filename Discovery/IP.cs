@@ -72,5 +72,10 @@ namespace Discovery
             if (ip.Values[3] > ip2.Values[3]) return true;
             return false;
         }
+
+        public override string ToString()
+        {
+            return String.Format("{0}.{1}.{2}.{3}", Values[0], Values[1], Values[2], Values[3]);
+        }
     }
 }
