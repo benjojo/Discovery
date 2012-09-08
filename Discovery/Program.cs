@@ -117,11 +117,11 @@ namespace Discovery
             return split[3].ToUpper();
         }
 
-        static Random rand = new Random(Environment.TickCount);
+        static Random rand = new Random();
         private static void SendICMP(string ip)
         {
             ushort id = (ushort)rand.Next(65000);
-            Random Ben = new Random(Environment.TickCount);
+            Random Ben = new Random();
             ipLayer.CurrentDestination = new IpV4Address(ip);
             ipLayer.Identification = id;
 
