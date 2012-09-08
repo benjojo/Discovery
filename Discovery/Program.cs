@@ -125,7 +125,7 @@ namespace Discovery
             else
             {
                 //tcp[13] = 18
-                communicator.SetFilter("tcp[13] = 18");
+                communicator.SetFilter("tcp[13] = 18 and port " + TCPPort);
             }
         }
         
