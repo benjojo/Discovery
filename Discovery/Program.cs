@@ -117,7 +117,7 @@ namespace Discovery
             return split[3].ToUpper();
         }
 
-        static Random rand = new Random();
+        static Random rand = new Random(Environment.TickCount);
         private static void SendICMP(string ip)
         {
             ushort id = (ushort)rand.Next(65000);
