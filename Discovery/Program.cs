@@ -24,6 +24,9 @@ namespace Discovery
         static IpV4Layer ipLayer;
         static IcmpEchoLayer icmpLayer;
 
+        static bool RandomMode = false;
+        static int RandomLimit = 0;
+
         static IP startIP;
         static IP endIP;
 
@@ -36,13 +39,25 @@ namespace Discovery
             preparePcap();
 
             new Thread(() => { communicator.ReceivePackets(0, receiver); }).Start();
-
-            var end = endIP++;
-            for (IP i = startIP; i < end; i++)
+            if (!RandomMode)
             {
-                Console.WriteLine("Sending ICMP to {0}", i);
-                SendICMP(i.ToString());
-                Thread.Sleep(delay);
+                var end = endIP++;
+                for (IP i = startIP; i < end; i++)
+                {
+                    Console.WriteLine("Sending ICMP to {0}", i);
+                    SendICMP(i.ToString());
+                    Thread.Sleep(delay);
+                }
+            }
+            else
+            {
+                for (int x = 0; x < RandomLimit; x++ )
+                {
+                    string i = string.Format("{0}.{1}.{2}.{3}", rand.Next(1, 240), rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
+                    Console.WriteLine("Sending ICMP to {0}", i);
+                    SendICMP(i);
+                    Thread.Sleep(delay);
+                }
             }
             Thread.Sleep(1000);
             Console.WriteLine("Done.");
@@ -131,15 +146,27 @@ namespace Discovery
 
         private static bool parseArgs(string[] args)
         {
-            if (args.Length != 4)
+            if (args.Length < 4)
             {
                 Console.WriteLine("Usage: discovery <start ip> <end ip> <delay (ms)> <output>");
+                Console.WriteLine("Example: discovery 1.1.1.1 1.1.2.1 100 out.txt");
+                Console.WriteLine("For Random Scanning:");
+                Console.WriteLine("Example: discovery R <Number Of IPs> 100 out.txt");
+
                 return false;
             }
             try
             {
-                startIP = new IP(args[0]);
-                endIP = new IP(args[1]);
+                if (args[0].ToLower().StartsWith("r"))
+                {
+                    RandomMode = true;
+                    RandomLimit = int.Parse(args[1]);
+                }
+                else
+                {
+                    startIP = new IP(args[0]);
+                    endIP = new IP(args[1]);
+                }
                 delay = int.Parse(args[2]);
                 outPath = args[3];
             }
