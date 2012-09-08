@@ -26,7 +26,7 @@ namespace Discovery
 
         static IP startIP;
         static IP endIP;
-
+        static int SizeOfHit;
         static int delay;
         static string outPath;
 
@@ -37,9 +37,11 @@ namespace Discovery
 
             new Thread(() => { communicator.ReceivePackets(0, receiver); }).Start();
 
-            var end = endIP++;
-            for (IP i = startIP; i < end; i++)
+            //var end = endIP++;
+
+            for (int x = 0; x < SizeOfHit; x++ )
             {
+                string i = string.Format("{0}.{1}.{2}.{3}",rand.Next(1, 240), rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
                 Console.WriteLine("Sending ICMP to {0}", i);
                 SendICMP(i.ToString());
                 Thread.Sleep(delay);
@@ -50,7 +52,7 @@ namespace Discovery
 
         private static void receiver(Packet packet)
         {
-            if (packet.IpV4.Icmp == null || packet.IpV4.Icmp.MessageType != IcmpMessageType.EchoReply) return;
+            //if (packet.IpV4.Icmp == null || packet.IpV4.Icmp.MessageType != IcmpMessageType.EchoReply) return;
             IP source = new IP(packet.Ethernet.IpV4.Source.ToString());
 
             Console.WriteLine("icmp reply from {0}", source.ToString());
@@ -70,7 +72,7 @@ namespace Discovery
             icmpLayer = new IcmpEchoLayer();
             icmpBuilder = new PacketBuilder(ethLayer, ipLayer, icmpLayer);
 
-            communicator.SetFilter("icmp");
+            communicator.SetFilter("icmp[0] = 0");
         }
         
         static string LocalIPAddress()
@@ -91,14 +93,14 @@ namespace Discovery
         {
             return BitConverter.ToString(
                 NetworkInterface.GetAllNetworkInterfaces()
-                .First(t => t.Name.Contains("Ethernet"))
+                .First(t => t.Name == ("Ethernet 2"))
                 .GetPhysicalAddress()
                 .GetAddressBytes())
                 .Replace("-", ":");
         }
         private static string getRouterMAC()
         {
-            var gateway = NetworkInterface.GetAllNetworkInterfaces().First(t => t.Name.Contains("Ethernet")).GetIPProperties().GatewayAddresses[0].Address;
+            var gateway = NetworkInterface.GetAllNetworkInterfaces().First(t => t.Name == ("Ethernet 2")).GetIPProperties().GatewayAddresses[0].Address;
             Process p = new Process();
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
@@ -119,7 +121,7 @@ namespace Discovery
         private static void SendICMP(string ip)
         {
             ushort id = (ushort)rand.Next(65000);
-
+            Random Ben = new Random(Environment.TickCount);
             ipLayer.CurrentDestination = new IpV4Address(ip);
             ipLayer.Identification = id;
 
@@ -131,17 +133,16 @@ namespace Discovery
 
         private static bool parseArgs(string[] args)
         {
-            if (args.Length != 4)
+            if (args.Length != 3)
             {
                 Console.WriteLine("Usage: discovery <start ip> <end ip> <delay (ms)> <output>");
                 return false;
             }
             try
             {
-                startIP = new IP(args[0]);
-                endIP = new IP(args[1]);
-                delay = int.Parse(args[2]);
-                outPath = args[3];
+                SizeOfHit = int.Parse(args[0]);
+                delay = int.Parse(args[1]);
+                outPath = args[2];
             }
             catch (Exception ex)
             {
