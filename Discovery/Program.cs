@@ -91,8 +91,14 @@ namespace Discovery
         {
             //if (packet.IpV4.Icmp == null || packet.IpV4.Icmp.MessageType != IcmpMessageType.EchoReply) return;
             IP source = new IP(packet.Ethernet.IpV4.Source.ToString());
-
-            Console.WriteLine("icmp reply from {0}", source.ToString());
+            if (!TCPMode)
+            {
+                Console.WriteLine("icmp reply from {0}", source.ToString());
+            }
+            else
+            {
+                Console.WriteLine("SYN reply from {0}", source.ToString());
+            }
             File.AppendAllText(outPath, source.ToString() + "\n");
         }
 
