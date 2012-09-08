@@ -54,6 +54,7 @@ namespace Discovery
             IP source = new IP(packet.Ethernet.IpV4.Source.ToString());
 
             Console.WriteLine("icmp reply from {0}", source.ToString());
+            File.AppendAllText(outPath, source.ToString() + "\n");
         }
 
         private static void preparePcap()
